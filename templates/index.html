@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RPG Tables</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>RPG Tables</h1>
+        <a href="{{ url_for('new_table') }}">Create New Table</a>
+        <a href="{{ url_for('new_custom_page') }}" style="margin-left: 1em;">Create New Custom Page</a>
+
+        <h2>All Tables</h2>
+        <ul>
+            {% for table in tables %}
+                <li><a href="{{ url_for('table_detail', table_id=table.id) }}">{{ table.name }}</a></li>
+            {% else %}
+                <li>No tables yet.</li>
+            {% endfor %}
+        </ul>
+
+        <hr>
+
+        <h2>Custom Pages</h2>
+        <ul>
+            {% for page in custom_pages %}
+                <li><a href="{{ url_for('custom_page', page_uuid=page.uuid) }}">{{ page.name }}</a></li>
+            {% else %}
+                <li>No custom pages yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

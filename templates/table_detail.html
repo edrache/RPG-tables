@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ table.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class=flashes>
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <h1>{{ table.name }}</h1>
+        <p>Tags: {{ table.tags|map(attribute='name')|join(', ') }}</p>
+
+        <hr>
+
+        <h2>Roll on this Table</h2>
+        <form action="{{ url_for('roll_table', table_id=table.id) }}" method="get">
+            <input type="submit" value="Roll!">
+        </form>
+
+        <hr>
+
+        <h2>Items</h2>
+        <ul>
+            {% for item in table.items %}
+                <li>{{ item.name }} (Weight: {{ item.weight }})</li>
+            {% else %}
+                <li>No items in this table yet.</li>
+            {% endfor %}
+        </ul>
+
+        <hr>
+
+        <h2>Add New Item</h2>
+        <form method="post">
+            <label for="name">Item Name:</label><br>
+            <input type="text" id="name" name="name" required><br><br>
+
+            <label for="weight">Weight:</label><br>
+            <input type="number" id="weight" name="weight" value="1" min="1" required><br><br>
+
+            <input type="submit" value="Add Item">
+        </form>
+
+        <br>
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </div>
+</body>
+</html>
