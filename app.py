@@ -1,5 +1,6 @@
 import os
 import random
+import re
 from flask import Flask, render_template, request, redirect, url_for, flash
 from models import db, Table, Item, Tag, CustomPage
 
@@ -110,40 +111,42 @@ def roll_table(table_id):
 @app.route('/new-custom-page', methods=['GET', 'POST'])
 def new_custom_page():
     if request.method == 'POST':
-        page_name = request.form['name']
-        table_ids = request.form.getlist('tables', type=int)
+        page_name = request.form.get('name')
+        content = request.form.get('content', '')
 
-        if not page_name or not table_ids:
-            flash('Page name and at least one table are required.', 'warning')
+        if not page_name:
+            flash('Page title is required.', 'warning')
             return redirect(url_for('new_custom_page'))
 
-        new_page = CustomPage(name=page_name)
-        tables = Table.query.filter(Table.id.in_(table_ids)).all()
-        new_page.tables.extend(tables)
-
+        new_page = CustomPage(name=page_name, content=content)
         db.session.add(new_page)
         db.session.commit()
 
         return redirect(url_for('custom_page', page_uuid=new_page.uuid))
 
-    tables = Table.query.all()
-    return render_template('create_custom_page.html', tables=tables)
+    return render_template('create_custom_page.html')
 
 @app.route('/page/<uuid:page_uuid>')
 def custom_page(page_uuid):
     page = CustomPage.query.filter_by(uuid=str(page_uuid)).first_or_404()
-    results = []
-    for table in page.tables:
-        if table.items:
+
+    def get_roll_for_table(match):
+        table_name = match.group(1).strip()
+        table = Table.query.filter_by(name=table_name).first()
+        if table:
+            if not table.items:
+                return f"[Table '{table_name}' is empty]"
+
             items = table.items
             item_names = [item.name for item in items]
             item_weights = [item.weight for item in items]
-            chosen_item_name = random.choices(item_names, weights=item_weights, k=1)[0]
-            results.append({'table_name': table.name, 'result': chosen_item_name})
+            return random.choices(item_names, weights=item_weights, k=1)[0]
         else:
-            results.append({'table_name': table.name, 'result': 'This table is empty.'})
+            return f"[Table '{table_name}' not found]"
 
-    return render_template('custom_page.html', page=page, results=results)
+    rendered_content = re.sub(r"<t:([^>]+)>", get_roll_for_table, page.content)
+
+    return render_template('custom_page.html', page=page, rendered_content=rendered_content)
 
 if __name__ == '__main__':
     app.run(debug=True)

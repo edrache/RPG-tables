@@ -4,18 +4,27 @@
     <meta charset="UTF-8">
     <title>{{ page.name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .rendered-content {
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 1em;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            font-family: monospace;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>{{ page.name }}</h1>
         <p>Shareable Link: <a href="{{ url_for('custom_page', page_uuid=page.uuid, _external=True) }}">{{ url_for('custom_page', page_uuid=page.uuid, _external=True) }}</a></p>
 
-        <h2>Random Rolls</h2>
-        <ul>
-            {% for result in results %}
-                <li><strong>{{ result.table_name }}:</strong> {{ result.result }}</li>
-            {% endfor %}
-        </ul>
+        <hr>
+
+        <div class="rendered-content">
+            {{ rendered_content }}
+        </div>
 
         <br>
         <a href="{{ url_for('index') }}">Back to Home</a>

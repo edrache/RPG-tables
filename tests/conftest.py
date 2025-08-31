@@ -1,9 +1,9 @@
 import pytest
 from app import app as flask_app, db as sqlalchemy_db
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def app():
-    """Create and configure a new app instance for each test module."""
+    """Create and configure a new app instance for each test."""
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     flask_app.config['TESTING'] = True
     flask_app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing forms
@@ -13,12 +13,15 @@ def app():
         yield flask_app
         sqlalchemy_db.drop_all()
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def client(app):
     """A test client for the app."""
     return app.test_client()
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def db(app):
     """A database for the app."""
-    return sqlalchemy_db
+    # This fixture provides the db object, but the app fixture handles setup/teardown.
+    # We need to make sure we are using the same db session as the app context.
+    with app.app_context():
+        yield sqlalchemy_db

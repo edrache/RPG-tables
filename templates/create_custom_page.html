@@ -19,21 +19,11 @@
 
         <h1>Create Custom Page</h1>
         <form method="post">
-            <label for="name">Page Name:</label><br>
+            <label for="name">Page Title:</label><br>
             <input type="text" id="name" name="name" required><br><br>
 
-            <label>Select Tables:</label><br>
-            <div class="checkbox-group">
-            {% for table in tables %}
-                <div>
-                    <input type="checkbox" id="table-{{ table.id }}" name="tables" value="{{ table.id }}">
-                    <label for="table-{{ table.id }}">{{ table.name }}</label>
-                </div>
-            {% else %}
-                <p>No tables available to add. Please create a table first.</p>
-            {% endfor %}
-            </div>
-            <br>
+            <label for="content">Content (use <code>&lt;t:table_name&gt;</code> for rolls):</label><br>
+            <textarea id="content" name="content" rows="10" style="width: 90%;"></textarea><br><br>
 
             <input type="submit" value="Create Page">
         </form>
