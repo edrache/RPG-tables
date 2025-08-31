@@ -49,12 +49,43 @@ def new_table():
 def table_detail(table_id):
     table = Table.query.get_or_404(table_id)
     if request.method == 'POST':
-        item_name = request.form['name']
-        item_weight = request.form.get('weight', 1, type=int)
+        bulk_items_str = request.form.get('bulk_items', '')
 
-        new_item = Item(name=item_name, weight=item_weight, table_id=table.id)
-        db.session.add(new_item)
-        db.session.commit()
+        if not bulk_items_str.strip():
+            flash('No items were entered.', 'warning')
+            return redirect(url_for('table_detail', table_id=table.id))
+
+        item_entries = bulk_items_str.split(';')
+        items_added_count = 0
+
+        for entry in item_entries:
+            entry = entry.strip()
+            if not entry:
+                continue
+
+            name = entry
+            weight = 1
+
+            if ':' in entry:
+                parts = entry.rsplit(':', 1)
+                name = parts[0].strip()
+                try:
+                    weight = int(parts[1].strip())
+                    if weight < 1:
+                        weight = 1
+                except (ValueError, IndexError):
+                    weight = 1
+
+            if name:
+                new_item = Item(name=name, weight=weight, table_id=table.id)
+                db.session.add(new_item)
+                items_added_count += 1
+
+        if items_added_count > 0:
+            db.session.commit()
+            flash(f'{items_added_count} item(s) added successfully.', 'success')
+        else:
+            flash('No valid items were found to add.', 'warning')
 
         return redirect(url_for('table_detail', table_id=table.id))
 

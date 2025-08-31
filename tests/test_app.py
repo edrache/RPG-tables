@@ -22,24 +22,73 @@ def test_create_table(client, db):
     assert table.tags[1].name == 'monsters'
 
 def test_add_item_to_table(client, db):
-    """Test adding an item to a table."""
-    # First, create a table to add items to
+    """Test adding an item to a table using the bulk method."""
     table = Table(name='Another Table')
     db.session.add(table)
     db.session.commit()
 
     response = client.post(f'/table/{table.id}', data={
-        'name': 'Gold Coin',
-        'weight': '10'
+        'bulk_items': 'Gold Coin:10 ; Silver Coin:5'
     }, follow_redirects=True)
     assert response.status_code == 200
+    assert b"2 item(s) added successfully." in response.data
     assert b"Gold Coin" in response.data
     assert b"(Weight: 10)" in response.data
+    assert b"Silver Coin" in response.data
+    assert b"(Weight: 5)" in response.data
 
-    item = Item.query.filter_by(name='Gold Coin').first()
-    assert item is not None
-    assert item.table_id == table.id
-    assert item.weight == 10
+    item1 = Item.query.filter_by(name='Gold Coin').first()
+    assert item1 is not None
+    assert item1.weight == 10
+    item2 = Item.query.filter_by(name='Silver Coin').first()
+    assert item2 is not None
+    assert item2.weight == 5
+
+def test_bulk_add_parsing(client, db):
+    """Test various parsing scenarios for bulk item adding."""
+    table = Table(name='Parsing Test Table')
+    db.session.add(table)
+    db.session.commit()
+
+    test_string = "  sword; axe; spear:2; knife; rusty dagger:3 ; ; item with : in name : 5 ; bad weight:foo "
+    response = client.post(f'/table/{table.id}', data={
+        'bulk_items': test_string
+    }, follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"7 item(s) added successfully." in response.data
+
+    # Check the items in the database
+    items = Item.query.filter_by(table_id=table.id).order_by(Item.id).all()
+    assert len(items) == 7
+
+    # sword (default weight 1)
+    assert items[0].name == 'sword'
+    assert items[0].weight == 1
+
+    # axe (default weight 1)
+    assert items[1].name == 'axe'
+    assert items[1].weight == 1
+
+    # spear (weight 2)
+    assert items[2].name == 'spear'
+    assert items[2].weight == 2
+
+    # knife (default weight 1)
+    assert items[3].name == 'knife'
+    assert items[3].weight == 1
+
+    # rusty dagger (weight 3)
+    assert items[4].name == 'rusty dagger'
+    assert items[4].weight == 3
+
+    # item with : in name (weight 5)
+    assert items[5].name == 'item with : in name'
+    assert items[5].weight == 5
+
+    # bad weight (default weight 1)
+    assert items[6].name == 'bad weight'
+    assert items[6].weight == 1
 
 def test_roll_table(client, db):
     """Test rolling on a table."""
